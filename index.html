@@ -1,1165 +1,654 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Constellation Gallery - คลังวิดีโอกลุ่มดาว</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Constellation Gallery - Celestial Luxury</title>
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Lexend:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500&family=Cinzel:wght@400;600&family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
+        /* --- REALISTIC LUXURY PALETTE --- */
         :root {
-            --deep-space: #0a0e27;
-            --nebula-blue: #1a2845;
-            --cosmic-purple: #6b2d7a;
-            --star-white: #e8f0ff;
-            --aurora-cyan: #00d4ff;
-            --aurora-magenta: #ff00ff;
-            --card-bg: rgba(26, 40, 69, 0.6);
-            --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+            --bg-void: #020204;
+            --bg-obsidian: rgba(20, 20, 25, 0.75); /* Darker for better contrast on mobile */
+            
+            --gold-champagne: #E6D2B5;
+            --gold-antique: #C5A059;
+            --starlight: #F0F4F8;
+            
+            --glass-surface: rgba(255, 255, 255, 0.03);
+            --border-fine: 1px solid rgba(197, 160, 89, 0.25);
+            
+            --transition-slow: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            --transition-fast: all 0.3s ease;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; /* Remove blue highlight on tap */
         }
 
         body {
-            font-family: 'Lexend', sans-serif;
-            background: var(--deep-space);
-            color: var(--star-white);
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-void);
+            color: var(--starlight);
             min-height: 100vh;
             overflow-x: hidden;
+            font-weight: 300;
             position: relative;
         }
 
-        /* --- ส่วนของ LOADER --- */
-        .loader {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: grid;
-            place-items: center;
-            background: var(--deep-space);
-            opacity: 1;
-            transition: opacity 0.6s ease;
+        /* --- BACKGROUND LAYERS --- */
+        #starCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
         }
 
-        .loader.hidden {
-            opacity: 0;
+        .nebula-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(30, 40, 60, 0.2), transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(60, 40, 30, 0.15), transparent 50%);
+            filter: blur(80px);
             pointer-events: none;
         }
 
-        .loader.finish {
-            animation: loaderExit 0.8s ease forwards;
+        /* --- LOADER --- */
+        .loader {
+            position: fixed; inset: 0; z-index: 9999;
+            background: #000;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            transition: opacity 1.5s ease;
         }
-
-        .loader-inner {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-            text-align: center;
+        .loader.hidden { opacity: 0; pointer-events: none; }
+        
+        .loader-star {
+            width: 3px; height: 3px;
+            background: #fff;
+            box-shadow: 0 0 25px 8px #fff;
+            border-radius: 50%;
+            animation: pulse-star 2s infinite;
         }
-
         .loader-text {
-            overflow: hidden;
+            margin-top: 2rem;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.4em;
+            color: var(--gold-champagne);
+            font-size: 0.8rem;
+            opacity: 0.8;
+            text-align: center;
+            padding: 0 1rem;
         }
 
-        .loader-title,
-        .loader-subtitle {
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: loaderTextUp 0.7s ease forwards;
-            font-family: 'Orbitron', sans-serif;
+        @keyframes pulse-star {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(3); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
-        .loader-title {
-            color: #ffffff;
-            font-size: clamp(1.1rem, 1.5vw, 1.6rem);
-        }
-
-        .loader-subtitle {
-            margin-top: 0.4rem;
-            font-size: clamp(2rem, 3vw, 3rem);
-            background: linear-gradient(90deg, var(--aurora-cyan), var(--aurora-magenta));
-            -webkit-background-clip: text;
-            color: transparent;
-            animation-delay: 0.3s;
-        }
-
-        .loader-bar {
-            position: absolute;
-            bottom: 4rem;
-            left: 50%;
-            transform: translate(-50%, 10px);
-            width: 16rem;
-            height: 0.25rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 9999px;
-            overflow: hidden;
-            opacity: 0;
-            animation: loaderBarIn 0.4s ease forwards;
-            animation-delay: 0.9s; 
-        }
-
-        .loader-progress {
-            height: 100%;
-            background: var(--aurora-cyan);
-            width: 0;
-            animation: loaderProgress 1.4s ease-in-out forwards;
-            animation-delay: 1.3s; 
-        }
-
-        @keyframes loaderTextUp {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes loaderBarIn {
-            0% { opacity: 0; transform: translate(-50%, 10px); }
-            100% { opacity: 1; transform: translate(-50%, 0); }
-        }
-
-        @keyframes loaderProgress {
-            0% { width: 0; }
-            100% { width: 100%; }
-        }
-
-        @keyframes loaderExit {
-            0% { opacity: 1; transform: scale(1); filter: blur(0px); }
-            100% { opacity: 0; transform: scale(1.1); filter: blur(14px); }
-        }
-
-        /* Animated Star Background */
-        .stars-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(2px 2px at 20% 30%, white, transparent),
-                radial-gradient(2px 2px at 60% 70%, white, transparent),
-                radial-gradient(1px 1px at 50% 50%, white, transparent),
-                radial-gradient(1px 1px at 80% 10%, white, transparent),
-                radial-gradient(2px 2px at 90% 60%, white, transparent),
-                radial-gradient(1px 1px at 33% 80%, white, transparent),
-                radial-gradient(1px 1px at 15% 90%, white, transparent);
-            background-size: 200% 200%;
-            animation: twinkle 8s ease-in-out infinite;
-            opacity: 0.6;
-            z-index: -1;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 0.8; }
-        }
-
-        /* Aurora Effect */
-        .aurora {
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(ellipse at 30% 40%, rgba(0, 212, 255, 0.15), transparent 50%),
-                radial-gradient(ellipse at 70% 60%, rgba(255, 0, 255, 0.1), transparent 50%);
-            animation: aurora-shift 15s ease-in-out infinite;
-            z-index: -1;
-        }
-
-        @keyframes aurora-shift {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(-10%, -10%) rotate(5deg); }
-        }
-
-        /* Header */
+        /* --- HEADER --- */
         header {
             text-align: center;
-            padding: 3rem 2rem 2rem;
-            background: linear-gradient(180deg, rgba(26, 40, 69, 0.8) 0%, transparent 100%);
-            backdrop-filter: blur(10px);
+            padding: 5rem 1.5rem 2rem; /* Reduced bottom padding */
             position: relative;
-            z-index: 10;
         }
 
         h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2rem, 6vw, 4rem);
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--aurora-cyan) 0%, var(--aurora-magenta) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2rem, 8vw, 4rem); /* Responsive font size */
+            font-weight: 400;
             letter-spacing: 2px;
-            animation: glow-pulse 3s ease-in-out infinite;
+            color: var(--starlight);
+            text-shadow: 0 0 30px rgba(255,255,255,0.15);
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
         }
 
-        @keyframes glow-pulse {
-            0%, 100% { filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.5)); }
-            50% { filter: drop-shadow(0 0 25px rgba(0, 212, 255, 0.8)); }
-        }
+        h1 span { color: var(--gold-champagne); display: inline-block; }
 
         .subtitle {
-            font-size: 1.1rem;
-            color: rgba(232, 240, 255, 0.7);
-            font-weight: 300;
-        }
-
-        /* --- ปุ่ม YouTube (เพิ่มใหม่) --- */
-        .yt-button-container {
-            margin-top: 1.5rem;
-        }
-
-        .yt-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.8rem 2rem;
-            background: rgba(255, 0, 0, 0.1);
-            border: 1px solid rgba(255, 60, 60, 0.5);
-            border-radius: 50px;
-            color: #ffcccc;
-            text-decoration: none;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
+            font-family: 'Kanit', sans-serif;
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.6);
             letter-spacing: 1px;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            backdrop-filter: blur(5px);
+            max-width: 90%;
+            margin: 0 auto;
             position: relative;
-            overflow: hidden;
+            padding-bottom: 1.5rem;
         }
 
-        .yt-button:hover {
-            background: rgba(255, 0, 0, 0.25);
-            border-color: #ff0000;
-            color: white;
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.4);
-            transform: translateY(-3px);
+        .subtitle::after {
+            content: '';
+            position: absolute; bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 1px; height: 25px;
+            background: linear-gradient(to bottom, var(--gold-antique), transparent);
         }
 
-        .yt-button i {
-            font-size: 1.2rem;
+        /* --- SOCIAL BUTTONS --- */
+        .social-nav {
+            display: flex; justify-content: center; gap: 1.5rem; margin-top: 1.5rem;
+            flex-wrap: wrap;
         }
-        /* --- จบปุ่ม YouTube --- */
-
-        /* --- ปุ่ม facebook (เพิ่มใหม่) --- */
-        .fb-button-container {
-            margin-top: 1.5rem;
-        }
-
-        .fb-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.8rem 2rem;
-            background: rgba(0, 89, 255, 0.1);
-            border: 1px solid rgba(60, 203, 255, 0.5);
-            border-radius: 50px;
-            color: #ccf9ff;
+        .social-link {
+            color: var(--gold-champagne);
             text-decoration: none;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 1px;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            backdrop-filter: blur(5px);
-            position: relative;
-            overflow: hidden;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: var(--transition-fast);
+            opacity: 0.8;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            padding: 0.5rem 1.2rem;
+            border-radius: 2px;
+            background: rgba(0,0,0,0.3);
+        }
+        .social-link:hover, .social-link:active { 
+            opacity: 1; 
+            border-color: var(--gold-champagne);
+            background: rgba(197, 160, 89, 0.1);
         }
 
-        .fb-button:hover {
-            background: rgba(25, 0, 255, 0.25);
-            border-color: #00eeff;
-            color: white;
-            box-shadow: 0 0 25px rgba(25, 0, 255, 0.4);
-            transform: translateY(-3px);
-        }
-
-        .fb-button i {
-            font-size: 1.2rem;
-        }
-        /* --- จบปุ่ม facebook --- */
-
-        /* Search Bar */
+        /* --- SEARCH --- */
         .search-container {
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 0 2rem;
+            max-width: 500px; /* Wider for mobile usage */
+            width: 90%;
+            margin: 2rem auto 3rem;
             position: relative;
         }
-
-        .search-wrapper {
-            position: relative;
-            animation: float-in 0.8s ease-out;
-        }
-
-        @keyframes float-in {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        #searchInput {
+        .search-input {
             width: 100%;
-            padding: 1rem 3rem 1rem 1.5rem;
-            background: rgba(26, 40, 69, 0.7);
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 50px;
-            color: var(--star-white);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 1rem;
+            color: #fff;
+            font-family: 'Kanit', sans-serif;
             font-size: 1rem;
-            font-family: 'Lexend', sans-serif;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            text-align: center;
+            transition: var(--transition-slow);
+            backdrop-filter: blur(5px);
         }
-
-        #searchInput:focus {
+        .search-input:focus {
             outline: none;
-            border-color: var(--aurora-cyan);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-            background: rgba(26, 40, 69, 0.9);
+            border-color: var(--gold-champagne);
+            background: rgba(255,255,255,0.05);
+            box-shadow: 0 0 15px rgba(197, 160, 89, 0.1);
+        }
+        .search-input::placeholder {
+            color: rgba(255,255,255,0.3);
         }
 
-        #searchInput::placeholder {
-            color: rgba(232, 240, 255, 0.4);
-        }
-
-        .search-icon {
-            position: absolute;
-            right: 1.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--aurora-cyan);
-            font-size: 1.2rem;
-            pointer-events: none;
-        }
-
-        /* Grid Gallery */
-        .gallery {
+        /* --- GALLERY GRID --- */
+        .gallery-grid {
+            display: grid;
+            /* Adaptive columns: 1 column on mobile, more on desktop */
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem; 
             max-width: 1400px;
             margin: 0 auto;
-            padding: 2rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2rem;
-            animation: fade-in 1s ease-out 0.3s backwards;
+            padding: 0 1.5rem 6rem;
         }
 
-        @keyframes fade-in {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Video Card */
-        .video-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            overflow: hidden;
+        /* Obsidian Card Style */
+        .card {
+            background: var(--bg-obsidian);
+            backdrop-filter: blur(12px);
+            border: var(--border-fine);
+            position: relative;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            backdrop-filter: blur(10px);
-            position: relative;
-            animation: card-appear 0.6s ease-out backwards;
-        }
-
-        .video-card:nth-child(1) { animation-delay: 0.1s; }
-        .video-card:nth-child(2) { animation-delay: 0.2s; }
-        .video-card:nth-child(3) { animation-delay: 0.3s; }
-        .video-card:nth-child(4) { animation-delay: 0.4s; }
-        .video-card:nth-child(5) { animation-delay: 0.5s; }
-        .video-card:nth-child(6) { animation-delay: 0.6s; }
-
-        @keyframes card-appear {
-            from {
-                opacity: 0;
-                transform: scale(0.8) translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .video-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.5),
-                0 0 30px rgba(0, 212, 255, 0.4);
-            border-color: var(--aurora-cyan);
-        }
-
-        .video-card.hidden {
-            display: none;
-        }
-
-        .thumbnail-wrapper {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             overflow: hidden;
-            background: var(--nebula-blue);
+            border-radius: 4px; /* Slight radius for modern feel */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
         }
 
-        .thumbnail {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        /* Hover only on non-touch devices */
+        @media (hover: hover) {
+            .card:hover {
+                transform: translateY(-8px);
+                border-color: rgba(197, 160, 89, 0.6);
+                box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            }
+            .card:hover .thumb-img {
+                filter: grayscale(0%) contrast(1);
+                transform: scale(1.05);
+                opacity: 1;
+            }
+            .card:hover .play-indicator { opacity: 1; }
+            .thumb-img {
+                filter: grayscale(60%) contrast(1.1);
+                opacity: 0.9;
+            }
+            .play-indicator { opacity: 0; }
+        }
+
+        /* Touch devices: Always show "active" state visuals */
+        @media (hover: none) {
+            .thumb-img {
+                filter: grayscale(0%) contrast(1);
+                opacity: 1;
+            }
+            .play-indicator { opacity: 1; }
+            .play-circle {
+                background: rgba(0,0,0,0.4);
+                border-color: rgba(255,255,255,0.6);
+            }
+        }
+
+        .thumb-box {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: #000;
+        }
+
+        .thumb-img {
+            position: absolute; width: 100%; height: 100%;
             object-fit: cover;
-            transition: transform 0.4s ease;
+            transition: 0.8s ease;
         }
 
-        .video-card:hover .thumbnail {
-            transform: scale(1.1);
+        .play-indicator {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition-slow);
         }
-
-        .play-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .video-card:hover .play-overlay {
-            opacity: 1;
-        }
-
-        .play-button {
-            width: 70px;
-            height: 70px;
-            background: rgba(0, 212, 255, 0.9);
+        
+        .play-circle {
+            width: 50px; height: 50px;
+            border: 1px solid var(--gold-champagne);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
         }
+        
+        .play-circle i { font-size: 1.2rem; margin-left: 4px; }
 
-        .video-card:hover .play-button {
-            transform: scale(1.2);
-            background: var(--aurora-cyan);
-        }
-
-        .play-button::after {
-            content: '';
-            width: 0;
-            height: 0;
-            border-left: 20px solid white;
-            border-top: 12px solid transparent;
-            border-bottom: 12px solid transparent;
-            margin-left: 4px;
-        }
-
-        .card-content {
+        .card-info {
             padding: 1.5rem;
+            text-align: left; /* Easier to read on mobile */
         }
 
         .card-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 700;
+            font-family: 'Kanit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: var(--starlight);
             margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #fff 0%, var(--aurora-cyan) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            line-height: 1.4;
         }
 
-        .card-description {
-            font-size: 0.9rem;
-            color: rgba(232, 240, 255, 0.6);
-            line-height: 1.5;
+        .card-desc {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
-        /* Modal */
+        .hidden { display: none !important; }
+
+        /* --- MODAL --- */
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 14, 39, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            animation: modal-fade-in 0.3s ease;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 2000;
+            opacity: 0; visibility: hidden;
+            transition: var(--transition-fast);
+            display: flex; flex-direction: column;
+            justify-content: center; /* Center vertically */
         }
 
-        @keyframes modal-fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
+        .modal.active { opacity: 1; visibility: visible; }
 
         .modal-content {
-            width: 100%;
-            max-width: 1200px;
-            background: var(--nebula-blue);
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.8),
-                0 0 40px rgba(0, 212, 255, 0.3);
-            border: 2px solid rgba(0, 212, 255, 0.4);
-            animation: modal-slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes modal-slide-up {
-            from {
-                opacity: 0;
-                transform: translateY(50px) scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .close-button {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 0, 255, 0.8);
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            z-index: 10;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
-        }
-
-        .close-button:hover {
-            transform: rotate(90deg) scale(1.1);
-            background: var(--aurora-magenta);
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
+            width: 100%; max-width: 1000px;
+            margin: 0 auto;
+            background: #000;
+            display: flex; flex-direction: column;
+            max-height: 100vh;
         }
 
         .video-wrapper {
-            position: relative;
+            position: relative; padding-bottom: 56.25%; height: 0;
             width: 100%;
-            padding-bottom: 56.25%;
+            background: #000;
         }
+        .video-wrapper iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-        .video-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .modal-info {
-            padding: 2rem;
-            background: rgba(10, 14, 39, 0.6);
+        .modal-details {
+            padding: 2rem 1.5rem;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .modal-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--aurora-cyan);
-        }
-
-        .modal-description {
-            color: rgba(232, 240, 255, 0.8);
-            line-height: 1.8;
-        }
-
-        /* No Results Message */
-        .no-results {
-            text-align: center;
-            padding: 4rem 2rem;
-            display: none;
-        }
-
-        .no-results.active {
-            display: block;
-        }
-
-        .no-results-icon {
-            font-size: 5rem;
-            margin-bottom: 1rem;
-            opacity: 0.3;
-        }
-
-        .no-results-text {
+            font-family: 'Cinzel', serif;
             font-size: 1.5rem;
-            color: rgba(232, 240, 255, 0.5);
+            color: var(--gold-champagne);
+            margin-bottom: 1rem;
+            line-height: 1.3;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .gallery {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        .modal-desc {
+            font-family: 'Kanit', sans-serif;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+
+        .close-btn {
+            position: absolute; top: 1rem; right: 1rem;
+            background: rgba(0,0,0,0.6); 
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 44px; height: 44px; /* Larger touch target */
+            color: #fff; font-size: 1.2rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2001;
+            backdrop-filter: blur(4px);
+        }
+        .close-btn:active { background: rgba(255,255,255,0.1); }
+
+        /* --- MOBILE SPECIFIC TWEAKS --- */
+        @media (max-width: 600px) {
+            .gallery-grid {
+                grid-template-columns: 1fr; /* Full width cards */
                 gap: 1.5rem;
-                padding: 1.5rem;
+                padding: 0 1rem 4rem;
             }
-
-            h1 {
-                font-size: 2.5rem;
-            }
-
-            .subtitle {
-                font-size: 0.9rem;
-                letter-spacing: 2px;
-            }
-
+            
             .modal-content {
-                margin: 1rem;
+                height: 100%;
+                justify-content: flex-start;
+            }
+            
+            .video-wrapper {
+                position: sticky; top: 0; z-index: 10;
             }
 
-            .modal-title {
-                font-size: 1.5rem;
-            }
-
-            .modal-info {
-                padding: 1.5rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .gallery {
-                grid-template-columns: 1fr;
-            }
-
-            header {
-                padding: 2rem 1rem 1.5rem;
-            }
-
-            .search-container {
-                padding: 0 1rem;
+            .close-btn {
+                top: 10px; right: 10px;
+                width: 40px; height: 40px;
+                background: rgba(0,0,0,0.8); /* Darker bg for visibility over video */
             }
         }
     </style>
 </head>
 <body>
+
+    <!-- Loader -->
     <div class="loader" id="loader">
-        <div class="loader-inner">
-            <div class="loader-text">
-                <p class="loader-title">Welcome To</p>
-                <p class="loader-subtitle">Constellar Gallery</p>
-                <p class="loader-subtitle">Kmps</p>
-
-            </div>
-
-            <div class="loader-bar">
-                <div class="loader-progress"></div>
-            </div>
-        </div>
+        <div class="loader-star"></div>
+        <div class="loader-text">ENTERING DEEP SPACE</div>
     </div>
 
-    <div class="stars-bg"></div>
-    <div class="aurora"></div>
+    <!-- Backgrounds -->
+    <canvas id="starCanvas"></canvas>
+    <div class="nebula-layer"></div>
 
     <header>
-        <h1>Constellar Gallery</h1>
-        <p class="subtitle">คลังวิดีโอกลุ่มดาว สำรวจจักรวาลผ่านหน้าจอ</p>
-
-        <div class="yt-button-container">
-            <a href="https://www.youtube.com/channel/UCXUV23X2pNQm02QRXQqfEOQ" target="_blank" class="yt-button">
+        <h1>CONSTELLATION<br><span>GALLERY</span></h1>
+        <p class="subtitle">A Curated Collection of the Cosmos</p>
+        
+        <div class="social-nav">
+            <a href="https://www.youtube.com/channel/UCXUV23X2pNQm02QRXQqfEOQ" target="_blank" class="social-link">
                 <i class="fab fa-youtube"></i> วิทย์พลังสิบ แก่งหางแมว
             </a>
-        </div>
-        <div class="fb-button-container">
-            <a href="https://www.facebook.com/share/1HcWLAJCf4/" target="_blank" class="fb-button">
+            <a href="https://www.facebook.com/share/1HcWLAJCf4/" target="_blank" class="social-link">
                 <i class="fab fa-facebook"></i> KMP Astronomy Club
             </a>
         </div>
     </header>
 
     <div class="search-container">
-        <div class="search-wrapper">
-            <input 
-                type="text" 
-                id="searchInput" 
-                placeholder="ค้นหากลุ่มดาว... (เช่น Orion, Cassiopeia)"
-            >
-            <span class="search-icon">🔍</span>
-        </div>
+        <input type="text" id="searchInput" class="search-input" placeholder="ค้นหากลุ่มดาว... (เช่น Orion)">
     </div>
 
-    <div class="gallery" id="gallery"></div>
-
-    <div class="no-results" id="noResults">
-        <div class="no-results-icon">✨</div>
-        <p class="no-results-text">ไม่พบกลุ่มดาวที่ค้นหา</p>
+    <div class="gallery-grid" id="gallery">
+        <!-- JS will populate this -->
     </div>
 
+    <!-- Modal -->
     <div class="modal" id="videoModal">
         <div class="modal-content">
-            <button class="close-button" onclick="closeModal()">×</button>
             <div class="video-wrapper">
-                <iframe 
-                    id="videoFrame" 
-                    src="" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen
-                ></iframe>
+                <iframe id="videoFrame" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
-            <div class="modal-info">
-                <h2 class="modal-title" id="modalTitle"></h2>
-                <p class="modal-description" id="modalDescription"></p>
+            <div class="modal-details">
+                <h2 class="modal-title" id="modalTitle">Title</h2>
+                <p class="modal-desc" id="modalDescription">Description</p>
             </div>
         </div>
     </div>
 
     <script>
-        // SCRIPT สำหรับ LOADER
-        (function () {
-            const runLoader = () => {
-                const loader = document.getElementById("loader");
-                if (!loader) return;
-                setTimeout(() => { loader.classList.add("finish"); }, 2600); 
-                setTimeout(() => { loader.classList.add("hidden"); }, 3400);
-            };
+        // --- RESPONSIVE STARFIELD ---
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        const stars = [];
 
-            if (document.readyState === "complete") {
-                runLoader();
-            } else {
-                window.addEventListener("load", runLoader);
+        function initStars() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            stars.length = 0;
+
+            // Adjust density for mobile performance
+            const density = width < 600 ? 5000 : 3500; 
+            const starCount = Math.floor((width * height) / density);
+
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * (width < 600 ? 1.2 : 1.5), // Smaller stars on mobile
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.05 + 0.01
+                });
             }
-            window.addEventListener("load", () => {
-                window.scrollTo(0, 0);
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#fff';
+
+            stars.forEach(star => {
+                ctx.globalAlpha = star.alpha;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (Math.random() > 0.99) star.alpha = Math.random(); 
+
+                star.y -= star.speed;
+                if (star.y < 0) star.y = height;
             });
-        })();
 
-        // ข้อมูลวิดีโอกลุ่มดาว
+            requestAnimationFrame(animateStars);
+        }
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(initStars, 200);
+        });
+
+        // --- DATA ---
         const constellations = [
-            {
-                id: 'nl-BavVIiNU', // ตัวอย่าง Video ID (แทนที่ด้วย ID จริง)
-                name: 'กลุ่มดาวคนคู่ (Gemini)',
-                description: 'มีดาวสว่างสองดวงอยู่ใกล้กันเปรียบเสมือน "ส่วนหัว" ของฝาแฝด และมีกลุ่มดาวทอดยาวลงมาเป็นลำตัวดูเหมือนคนสองคนยืนจับมือกัน'
-            },
-            {
-                id: 'ikpOKqxS3hA',
-                name: 'กลุ่มดาวงู (Serpens)',
-                description: 'เป็นกลุ่มดาวเดียวที่แยกเป็น 2 ส่วน (หัวงูและหางงู) โดยมีคนแบกงูคั่นกลาง'
-            },,
-            {
-                id: 'dofMrVjBstg',
-                name: 'กลุ่มดาวค้างคาว (Cassiopeia)',
-                description: ': รูปตัว "W" ที่เด่นชัดมาก'
-            },
-            {
-                id: 'auoDabwrg6M',
-                name: 'กลุ่มดาวสิงโตเล็ก (Leo Minor)',
-                description: 'อยู่ระหว่างสิงโตตัวใหญ่และหมีใหญ่'
-            },
-            {
-                id: 'FBsLwTVDtRE',
-                name: 'กลุ่มดาวสามเหลี่ยม (Triangulum Tri)',
-                description: 'รูปสามเหลี่ยมหน้าจั่วเล็กๆ ใกล้แอนดรอเมดา มีดาราจักร M33'
-            },
-            {
-                id: '4JBWxmRyke4',
-                name: 'กลุ่มดาวนกยูง (Pavo)',
-                description: 'กลุ่มดาวสวยงามในซีกฟ้าใต้ มีดาวฤกษ์สว่างชื่อ Peacock เป็นตัวแทนของนกยูงศักดิ์สิทธิ์ของเฮร่า'
-            },
-            {
-                id: 'RLX-QnF40iA',
-                name: 'กลุ่มดาวหมีเล็ก (Ursa Minor)',
-                description: 'มีดาวเหนือ (Polaris) อยู่ที่ปลายหาง เป็นจุดหมุนของท้องฟ้าที่ดาวดวงอื่นจะโคจรรอบๆ'
-            },
-            {
-                id: '91JOVxGwNGg',
-                name: 'กลุ่มดาวหมาป่า (Lupus)',
-                description: 'กลุ่มดาวทางซีกฟ้าใต้ อยู่ระหว่างแมงป่องและคนครึ่งม้า เป็นหมาป่าที่ถูกคนครึ่งม้าจับไว้'
-            },
-            {
-                id: 'e8V8YCaO5Iw',
-                name: 'กลุ่มดาวหญิงสาว (Virgo)',
-                description: ' กลุ่มดาวจักรราศีที่มีขนาดใหญ่ที่สุด ถือรวงข้าวซึ่งมีดาวสว่างชื่อ Spica (รวงข้าว) ส่องแสงสีขาวนวล'
-            },
-            {
-                id: 'jM9OpQ0GEQ0',
-                name: 'กลุ่มดาวหมาจิ้งจอก (Vulpecula)',
-                description: 'กลุ่มดาวจางๆ ที่อยู่กลางสามเหลี่ยมหน้าร้อน เป็นที่ตั้งของเนบิวลาดัมเบลล์ (M27) ที่มีชื่อเสียง'
-            },
-            {
-                id: '4J_K54VeSiE',
-                name: 'กลุ่มดาวสิงโต (Leo)',
-                description: ' กลุ่มดาวจักรราศี รูปร่างเหมือนสิงโตหมอบ มีดาว Regulus (หัวใจสิงห์) สว่างสดใส และมีส่วนหัวเป็นรูปเคียวเกี่ยวข้าว'
-            },
-            {
-                id: 'tq-0749ySY4',
-                name: 'กลุ่มดาวนกทูแคน (Tucana)',
-                description: 'กลุ่มดาวในซีกฟ้าใต้ลึก เป็นนกปากใหญ่แห่งเขตร้อน จุดเด่นคือเป็นที่ตั้งของ "เมฆแมเจลแลนเล็ก" (SMC) และกระจุกดาว 47 Tucanae ที่สว่างและสวยงามอลังการรองจากโอเมกาเซนทอรี'
-
-            },
-            {
-                id: 'rBbfq3nm39g',
-                name: 'กลุ่มดาวกระต่าย (Lepus)',
-                description: 'ลักษณะของ กลุ่มดาวกระต่าย (Lepus) มีเอกลักษณ์ที่ค่อนข้างสังเกตได้ง่ายหากท้องฟ้ามืดพอ แม้ว่ามันจะเป็นกลุ่มดาวขนาดเล็กและไม่ได้มีความสว่างโดดเด่นเท่ากลุ่มดาวเพื่อนบ้านอย่างนายพราน'
-            },
-            {
-                id: 'W1ulBxbfM5E',
-                name: 'กลุ่มดาวมังกร (Draco)',
-                description: 'เป็นกลุ่มดาวที่ทอดยาว มีรูปร่างคล้ายงูหรือมังกร ขดเคี้ยวอยู่ระหว่างกลุ่มดาวหมีใหญ่และหมีเล็ก'
-            },
-            {
-                id: '1bgN3p_re3c',
-                name: 'กลุ่มดาวกิ้งก่า (Lacerta)',
-                description: 'เป็นกลุ่มดาวขนาดเล็กที่ประกอบด้วยดาวฤกษ์ที่ไม่ค่อยสว่างนัก เรียงตัวกันเป็นเส้นซิกแซก ดูคล้ายตัว "W" หรือ "Z" ขนาดเล็ก บางคนจึงเรียกว่า "Little Cassiopeia" (ค้างคาวน้อย)'
-            },
-            {
-                id: 'P4qkbrnq59Q',
-                name: 'กลุ่มดาวท้ายเรือ (Puppis)',
-                description: 'เป็นส่วนท้ายของเรือเดินสมุทรขนาดใหญ่ ประกอบด้วยดาวฤกษ์จำนวนมากที่กระจัดกระจายอยู่ในแถบทางช้างเผือก'
-            },
-            {
-                id: 'zJUqI9mDYvM',
-                name: 'กลุ่มดาวฟินิกส์ (Phoenix)',
-                description: 'มีรูปร่างคล้ายนกที่กำลังสยายปีก มีดาวฤกษ์สว่างดวงหนึ่งที่ส่วนหัว'
-            },
-            {
-                id: '4-Kovwsm8rc',
-                name: 'กลุ่มดาวค้างคาว (Cassiopeia)',
-                description: 'เรียงกันเป็นรูปตัว "W" หรือ "M" (คนไทยมองเป็นค้างคาวกางปีก)'
-            },
-            {
-                id: 'nO4y7MS3zFg', /* --- มีปัญหา --- */ 
-                name: 'กลุ่มดาวนายพราน (Orion)',
-                description: 'มีดาว 3 ดวงเรียงกันตรงกลางที่คนไทยเรียกว่า "ดาวไถ" Orions Belt และมีดาวสว่างสี่มุมที่เป็นไหล่และเท้าของนายพราน'
-            },
-            {
-                id: 'frUZNC9gtp8',
-                name: 'กลุ่มดาวปลาคู่ (Pisces)',
-                description: 'ป็นรูปปลาสองตัวที่ถูกผูกไว้ด้วยเชือก เรียงตัวกันเป็นรูปตัว "V" หรือมุมแหลมยาวๆ'
-            },
-            {
-                id: 'hk0LL_7aKTs',
-                name: 'กลุ่มดาวม้าบิน (Pegasus)',
-                description: 'เป็นรูปม้าที่มีปีก แต่ในท้องฟ้าเราจะเห็นแค่ส่วนหัว หน้าอก และขาหน้าของมันที่กำลังพุ่งออกมาจากสี่เหลี่ยม'
-            },
-            {
-                id: 'SACBiXxFsY8',
-                name: 'กลุ่มดาวราศีธนู (Sagittarius)',
-                description: 'ตามตำนานคือเซนทอร์ (ครึ่งคนครึ่งม้า) กำลังง้างธนู แต่คนทั่วไปมักจะจำภาพของ "กาน้ำชา" (The Teapot) ได้มากกว่า เพราะดาวดวงหลักๆ เรียงกันเป็นรูปกาที่มีพวยกาและหูจับที่ชัดเจนมาก'
-            },
-            {
-                id: 'h7MyznfDKAc',
-                name: 'กลุ่มดาววัว (Taurus)',
-                description: 'มีกลุ่มดาวรูปตัว "V" ที่แทนหน้าของวัว'
-            },
-            {
-                id: 'du5xpI1ir-w',
-                name: 'กลุ่มดาวปลาคู่ (Pisces)',
-                description: 'เป็นปลาสองตัวที่มีเชือกผูกหางไว้ด้วยกัน โดยมีจุดเด่นอยู่ที่ "วงแหวนดาวปลา" (The Circlet) ซึ่งเป็นกลุ่มดาวดวงจางๆ เรียงกันเป็นวงกลม (แทนตัวปลาตัวหนึ่ง) อยู่ใต้สี่เหลี่ยมม้าบินพอดี'
-            },
-            {
-                id: 'cdAYkpUh2Tw', /* -- หมีใหญ่ --*/
-                name: 'กลุ่มดาวหมีใหญ่ (Ursa Major)',
-                description: 'กลุ่มดาวประจำราศีพิจิก มีดาวดาวยักษ์แดง Antares ที่มีสีแดงชัดเจน'
-            },
-            {
-                id: 'zJYnulZzVO0',
-                name: 'กลุ่มดาวแมงป่อง(Scorpius)',
-                description: 'กลุ่มดาวประจำราศีพิจิก มีดาวดาวยักษ์แดง Antares ที่มีสีแดงชัดเจน'
-            },
-            {
-                id: 'xlVUYitb0QU',
-                name: 'กลุ่มดาววัว (Taurus)',
-                description: 'กลุ่มดาวประจำราศีพฤษภ มีกระจุกดาวลูกไก่ (Pleiades) อยู่ในนี้'
-            },
-            {
-                id: 'tq_lERMju4s',
-                name: 'กลุ่มดาวพิณ(Lyra)',
-                description: 'มีดาวฤกษ์ Vega ที่สว่างมากเป็นอันดับต้นๆ บนท้องฟ้า'
-            },
-            {
-                id: 'GOY72pDt2Jw',
-                name: 'กลุ่มดาวคันชั่ง(Libra)',
-                description: 'กลุ่มดาวประจำราศีตุลย์ เป็นสัญลักษณ์แห่งความยุติธรรม'
-            },
-            {
-                id: 'FgplFtOj0N0',
-                name: 'กลุ่มดาวปลาบิน (Volans)',
-                description: 'ประกอบด้วยดาวจางๆ เรียงตัวกันดูคล้าย "ปลาที่มีครีบยาวเป็นปีก" กำลังพุ่งขึ้นจากน้ำ'
-            },
-            {
-                id: 'O0wDYgu_zD0',
-                name: 'กลุ่มดาวหมีเล็ก (Ursa Minor)',
-                description: 'มีรูปร่างคล้าย "กระบวยจิ๋ว" ซึ่งเลียนแบบมาจากกลุ่มดาวหมีใหญ่ (แต่ขนาดเล็กกว่าและจางกว่า)'
-            },
-            {
-                id: 'lcDRwgGEKm4',
-                name: 'กลุ่มดาวแกะ (Aries)',
-                description: 'ประกอบด้วยดาวหลักเพียงไม่กี่ดวง เรียงตัวกันเป็นเส้นโค้งมนดูคล้าย "เขาแกะ" หรือมองง่ายๆ เป็นรูปมุมป้านเล็กๆ'
-            },
-            {
-                id: 'llzH2NFa9Nk',
-                name: 'กลุ่มดาวคนครึ่งม้า (Centaurus)',
-                description: 'เป็นรูปเซนทอร์ (ครึ่งคนครึ่งม้า) ที่ดูสง่างาม โดยขาหน้าของมันจะชี้ไปทางกลุ่มดาวกางเขนใต้'
-            },
-            {
-                id: 'k5pZIi7weL0',
-                name: 'กลุ่มดาวถ้วย (Crater)',
-                description: 'ประกอบด้วยดาวจางๆ ที่เรียงตัวกันเป็นรูป "ถ้วยมีฐาน" หรือ "จอกเหล้า" ที่ค่อนข้างชัดเจน'
-            },
-            {
-                id: 'iMeUo55nJAs',
-                name: 'กลุ่มดาวนกการเวก (Apus)',
-                description: 'ป็นรูป "นกสวรรค์" (Bird of Paradise) ที่ไม่มีขา (ตามความเชื่อสมัยก่อนที่ว่านกชนิดนี้จะบินอยู่บนสวรรค์ตลอดเวลา)'
-            },
-            {
-                id: '5C_27H3-plU',
-                name: 'กลุ่มดาวแท่นบูชา (Ara)',
-                description: 'ประกอบด้วยดาวฤกษ์ที่เรียงกันคล้ายรูป "แท่นบูชา" หรือ "กระถางไฟ" ที่มีควันพุ่งออกมา (ควันนั้นก็คือแถบทางช้างเผือกนั่นเองครับ)'
-            },
-            {
-                id: 'yQJXNMeydOE',
-                name: 'กลุ่มดาวคนแบกหม้อน้ำ (Aquarius)',
-                description: 'เป็นรูปชายหนุ่มกำลังเทน้ำออกจากหม้อน้ำ (หรือคนไทยบางครั้งเรียก "คนถือหม้อน้ำ") ดาวฤกษ์ในกลุ่มนี้มักจะไม่สว่างมากนัก'
-            },
-            {
-                id: 'rVERa790CzY',
-                name: 'กลุ่มดาวซีตัส (Cetus)',
-                description: 'มักวาดเป็นรูปสัตว์ประหลาดทะเล (Sea Monster) ที่มีหัวเหมือนสัตว์บกและหางเป็นปลา'
-            },
-            {
-                id: 'aDnH6SqijIo',
-                name: 'กลุ่มดาวซีฟิอัส (Cepheus)',
-                description: 'รูปร่างคล้าย "บ้านที่มีหลังคาทรงแหลม" หรือสี่เหลี่ยมที่มีสามเหลี่ยมอยู่ข้างบน (แต่เป็นบ้านที่กลับหัวในบางจังหวะ)'
-            },
-            {
-                id: '8xUFYDUZnMM',
-                name: 'กลุ่มดาวนกเขา (Columba)',
-                description: 'ประกอบด้วยดาวฤกษ์จางๆ เรียงตัวกันเป็นรูปนกพิราบที่กำลังคาบกิ่งมะกอก'
-            },
-            {
-                id: 'Qk6gRUw_DsY',
-                name: 'กลุ่มดาวนกอินทรี (Aquila)',
-                description: 'มีลักษณะคล้ายนกที่กำลังสยายปีกบินอยู่บนทางช้างเผือก'
-            },
-            {
-                id: 'Bmac-NOc_qc',
-                name: 'กลุ่มดาวกางเขนใต้ (Crux)',
-                description: 'ประกอบด้วยดาวสว่าง 4-5 ดวง เรียงกันเป็นรูปกางเขน หรือรูป "ว่าว"'
-            },
-            {
-                id: 'vJofXOHvU8g',
-                name: 'กลุ่มดาวนาฬิกา (Horologium)',
-                description: 'เป็นเส้นยาวคดเคี้ยว ดูไม่ค่อยเหมือนนาฬิกาในปัจจุบันเท่าไหร่ แต่มันถูกตั้งชื่อเพื่อเป็นเกียรติแก่ "นาฬิกาแบบลูกตุ้ม" (Pendulum Clock) ที่ใช้ในการทดลองทางวิทยาศาสตร์สมัยก่อน'
-            },
-            {
-                id: 'CzALwX1P1Eg',
-                name: 'กลุ่มดาวงูน้ำเล็ก (Hydrus)',
-                description: 'เป็นรูปสามเหลี่ยมยาวๆ หรือเส้นคดเคี้ยวขนาดเล็ก'
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            },
-            {
-                id: '',
-                name: '',
-                description: ''
-            }
+            { id: 'nl-BavVIiNU', name: 'กลุ่มดาวคนคู่ (Gemini)', description: 'มีดาวสว่างสองดวงอยู่ใกล้กันเปรียบเสมือน "ส่วนหัว" ของฝาแฝด และมีกลุ่มดาวทอดยาวลงมาเป็นลำตัวดูเหมือนคนสองคนยืนจับมือกัน' },
+            { id: 'nO4y7MS3zFg', name: 'กลุ่มดาวนายพราน (Orion)', description: 'มีดาว 3 ดวงเรียงกันตรงกลางที่คนไทยเรียกว่า "ดาวไถ" และมีดาวสว่างสี่มุมที่เป็นไหล่และเท้าของนายพราน' },
+            { id: 'dofMrVjBstg', name: 'กลุ่มดาวค้างคาว (Cassiopeia)', description: 'รูปตัว "W" ที่เด่นชัดมาก' },
+            { id: 'auoDabwrg6M', name: 'กลุ่มดาวสิงโตเล็ก (Leo Minor)', description: 'อยู่ระหว่างสิงโตตัวใหญ่และหมีใหญ่' },
+            { id: 'FBsLwTVDtRE', name: 'กลุ่มดาวสามเหลี่ยม (Triangulum Tri)', description: 'รูปสามเหลี่ยมหน้าจั่วเล็กๆ ใกล้แอนดรอเมดา มีดาราจักร M33' },
+            { id: '4JBWxmRyke4', name: 'กลุ่มดาวนกยูง (Pavo)', description: 'กลุ่มดาวสวยงามในซีกฟ้าใต้ มีดาวฤกษ์สว่างชื่อ Peacock เป็นตัวแทนของนกยูงศักดิ์สิทธิ์ของเฮร่า' },
+            { id: 'RLX-QnF40iA', name: 'กลุ่มดาวหมีเล็ก (Ursa Minor)', description: 'มีดาวเหนือ (Polaris) อยู่ที่ปลายหาง เป็นจุดหมุนของท้องฟ้าที่ดาวดวงอื่นจะโคจรรอบๆ' },
+            { id: '91JOVxGwNGg', name: 'กลุ่มดาวหมาป่า (Lupus)', description: 'กลุ่มดาวทางซีกฟ้าใต้ อยู่ระหว่างแมงป่องและคนครึ่งม้า เป็นหมาป่าที่ถูกคนครึ่งม้าจับไว้' },
+            { id: 'e8V8YCaO5Iw', name: 'กลุ่มดาวหญิงสาว (Virgo)', description: 'กลุ่มดาวจักรราศีที่มีขนาดใหญ่ที่สุด ถือรวงข้าวซึ่งมีดาวสว่างชื่อ Spica (รวงข้าว) ส่องแสงสีขาวนวล' },
+            { id: 'jM9OpQ0GEQ0', name: 'กลุ่มดาวหมาจิ้งจอก (Vulpecula)', description: 'กลุ่มดาวจางๆ ที่อยู่กลางสามเหลี่ยมหน้าร้อน เป็นที่ตั้งของเนบิวลาดัมเบลล์ (M27) ที่มีชื่อเสียง' },
+            { id: '4J_K54VeSiE', name: 'กลุ่มดาวสิงโต (Leo)', description: 'กลุ่มดาวจักรราศี รูปร่างเหมือนสิงโตหมอบ มีดาว Regulus (หัวใจสิงห์) สว่างสดใส และมีส่วนหัวเป็นรูปเคียวเกี่ยวข้าว' },
+            { id: 'tq-0749ySY4', name: 'กลุ่มดาวนกทูแคน (Tucana)', description: 'กลุ่มดาวในซีกฟ้าใต้ลึก เป็นนกปากใหญ่แห่งเขตร้อน จุดเด่นคือเป็นที่ตั้งของ "เมฆแมเจลแลนเล็ก" (SMC)' },
+            { id: 'rBbfq3nm39g', name: 'กลุ่มดาวกระต่าย (Lepus)', description: 'ลักษณะของกลุ่มดาวกระต่ายมีเอกลักษณ์ที่สังเกตง่าย อยู่ใต้เท้านายพราน' },
+            { id: 'W1ulBxbfM5E', name: 'กลุ่มดาวมังกร (Draco)', description: 'เป็นกลุ่มดาวที่ทอดยาว มีรูปร่างคล้ายงูหรือมังกร ขดเคี้ยวอยู่ระหว่างกลุ่มดาวหมีใหญ่และหมีเล็ก' },
+            { id: '1bgN3p_re3c', name: 'กลุ่มดาวกิ้งก่า (Lacerta)', description: 'กลุ่มดาวขนาดเล็ก เรียงตัวกันเป็นเส้นซิกแซก ดูคล้ายตัว "W" หรือ "Z" ขนาดเล็ก' },
+            { id: 'P4qkbrnq59Q', name: 'กลุ่มดาวท้ายเรือ (Puppis)', description: 'เป็นส่วนท้ายของเรือเดินสมุทรขนาดใหญ่ ประกอบด้วยดาวฤกษ์จำนวนมากที่กระจัดกระจายอยู่ในแถบทางช้างเผือก' },
+            { id: 'zJUqI9mDYvM', name: 'กลุ่มดาวฟินิกส์ (Phoenix)', description: 'มีรูปร่างคล้ายนกที่กำลังสยายปีก มีดาวฤกษ์สว่างดวงหนึ่งที่ส่วนหัว' },
+            { id: '4-Kovwsm8rc', name: 'กลุ่มดาวค้างคาว (Cassiopeia) [2]', description: 'เรียงกันเป็นรูปตัว "W" หรือ "M" (คนไทยมองเป็นค้างคาวกางปีก)' },
+            { id: 'ikpOKqxS3hA', name: 'กลุ่มดาวงู (Serpens)', description: 'เป็นกลุ่มดาวเดียวที่แยกเป็น 2 ส่วน (หัวงูและหางงู) โดยมีคนแบกงูคั่นกลาง' },
+            { id: 'frUZNC9gtp8', name: 'กลุ่มดาวปลาคู่ (Pisces)', description: 'เป็นรูปปลาสองตัวที่ถูกผูกไว้ด้วยเชือก เรียงตัวกันเป็นรูปตัว "V"' },
+            { id: 'hk0LL_7aKTs', name: 'กลุ่มดาวม้าบิน (Pegasus)', description: 'เป็นรูปม้าที่มีปีก แต่ในท้องฟ้าเราจะเห็นแค่ส่วนหัว หน้าอก และขาหน้า' },
+            { id: 'SACBiXxFsY8', name: 'กลุ่มดาวราศีธนู (Sagittarius)', description: 'คนทั่วไปมักจะจำภาพของ "กาน้ำชา" (The Teapot) เพราะดาวเรียงกันเป็นรูปกาที่มีพวยกาและหูจับชัดเจน' },
+            { id: 'h7MyznfDKAc', name: 'กลุ่มดาววัว (Taurus)', description: 'มีกลุ่มดาวรูปตัว "V" ที่แทนหน้าของวัว' },
+            { id: 'du5xpI1ir-w', name: 'กลุ่มดาวปลาคู่ (Pisces) [2]', description: 'จุดเด่นอยู่ที่ "วงแหวนดาวปลา" (The Circlet) ซึ่งเป็นกลุ่มดาวดวงจางๆ เรียงกันเป็นวงกลม' },
+            { id: 'cdAYkpUh2Tw', name: 'กลุ่มดาวหมีใหญ่ (Ursa Major)', description: 'มีดาวเรียงตัวเป็นรูปกระบวยตักน้ำขนาดใหญ่ (Big Dipper)' },
+            { id: 'zJYnulZzVO0', name: 'กลุ่มดาวแมงป่อง (Scorpius)', description: 'กลุ่มดาวประจำราศีพิจิก มีดาวดาวยักษ์แดง Antares ที่มีสีแดงชัดเจน' },
+            { id: 'xlVUYitb0QU', name: 'กลุ่มดาววัว (Taurus) [2]', description: 'กลุ่มดาวประจำราศีพฤษภ มีกระจุกดาวลูกไก่ (Pleiades) อยู่ในนี้' },
+            { id: 'tq_lERMju4s', name: 'กลุ่มดาวพิณ (Lyra)', description: 'มีดาวฤกษ์ Vega ที่สว่างมากเป็นอันดับต้นๆ บนท้องฟ้า' },
+            { id: 'GOY72pDt2Jw', name: 'กลุ่มดาวคันชั่ง (Libra)', description: 'กลุ่มดาวประจำราศีตุลย์ เป็นสัญลักษณ์แห่งความยุติธรรม' },
+            { id: 'FgplFtOj0N0', name: 'กลุ่มดาวปลาบิน (Volans)', description: 'ประกอบด้วยดาวจางๆ เรียงตัวกันดูคล้าย "ปลาที่มีครีบยาวเป็นปีก"' },
+            { id: 'O0wDYgu_zD0', name: 'กลุ่มดาวหมีเล็ก (Ursa Minor) [2]', description: 'มีรูปร่างคล้าย "กระบวยจิ๋ว" ซึ่งเลียนแบบมาจากกลุ่มดาวหมีใหญ่' },
+            { id: 'lcDRwgGEKm4', name: 'กลุ่มดาวแกะ (Aries)', description: 'เรียงตัวกันเป็นเส้นโค้งมนดูคล้าย "เขาแกะ" หรือมองง่ายๆ เป็นรูปมุมป้านเล็กๆ' },
+            { id: 'llzH2NFa9Nk', name: 'กลุ่มดาวคนครึ่งม้า (Centaurus)', description: 'เป็นรูปเซนทอร์ที่ดูสง่างาม โดยขาหน้าของมันจะชี้ไปทางกลุ่มดาวกางเขนใต้' },
+            { id: 'k5pZIi7weL0', name: 'กลุ่มดาวถ้วย (Crater)', description: 'เรียงตัวกันเป็นรูป "ถ้วยมีฐาน" หรือ "จอกเหล้า" ที่ค่อนข้างชัดเจน' },
+            { id: 'iMeUo55nJAs', name: 'กลุ่มดาวนกการเวก (Apus)', description: 'เป็นรูป "นกสวรรค์" ที่ไม่มีขา' },
+            { id: '5C_27H3-plU', name: 'กลุ่มดาวแท่นบูชา (Ara)', description: 'เรียงกันคล้ายรูป "แท่นบูชา" หรือ "กระถางไฟ" ที่มีควันพุ่งออกมา' },
+            { id: 'yQJXNMeydOE', name: 'กลุ่มดาวคนแบกหม้อน้ำ (Aquarius)', description: 'เป็นรูปชายหนุ่มกำลังเทน้ำออกจากหม้อน้ำ' },
+            { id: 'rVERa790CzY', name: 'กลุ่มดาวซีตัส (Cetus)', description: 'มักวาดเป็นรูปสัตว์ประหลาดทะเล (Sea Monster)' },
+            { id: 'aDnH6SqijIo', name: 'กลุ่มดาวซีฟิอัส (Cepheus)', description: 'รูปร่างคล้าย "บ้านที่มีหลังคาทรงแหลม"' },
+            { id: '8xUFYDUZnMM', name: 'กลุ่มดาวนกเขา (Columba)', description: 'เรียงตัวกันเป็นรูปนกพิราบที่กำลังคาบกิ่งมะกอก' },
+            { id: 'Qk6gRUw_DsY', name: 'กลุ่มดาวนกอินทรี (Aquila)', description: 'มีลักษณะคล้ายนกที่กำลังสยายปีกบินอยู่บนทางช้างเผือก' },
+            { id: 'Bmac-NOc_qc', name: 'กลุ่มดาวกางเขนใต้ (Crux)', description: 'ประกอบด้วยดาวสว่าง 4-5 ดวง เรียงกันเป็นรูปกางเขน หรือรูป "ว่าว"' },
+            { id: 'vJofXOHvU8g', name: 'กลุ่มดาวนาฬิกา (Horologium)', description: 'เป็นเส้นยาวคดเคี้ยว ถูกตั้งชื่อเพื่อเป็นเกียรติแก่ "นาฬิกาแบบลูกตุ้ม"' },
+            { id: 'CzALwX1P1Eg', name: 'กลุ่มดาวงูน้ำเล็ก (Hydrus)', description: 'เป็นรูปสามเหลี่ยมยาวๆ หรือเส้นคดเคี้ยวขนาดเล็ก' },
+            { id: '571bdWdYfZA', name: 'สุนัขล่าเนื้อ (Canes Venatici)', description: 'เป็นกลุ่มดาวขนาดเล็ก อยู่ใกล้กับกลุ่มดาวหมีใหญ่' },
+            { id: 'qNgtx1SRUxw', name: 'มงกุฎเหนือ (Corona Borealis)', description: 'มีลักษณะเป็นรูปครึ่งวงกลมคล้ายมงกุฎหรือถ้วย' },
+            { id: 'CzQvgs-q1wg', name: 'หมาเล็ก (Canis Minor)', description: 'มักถูกมองว่าเป็นสุนัขคู่ใจของนายพราน (Orion)' },
+            { id: 'lB-AaPZWcWA', name: 'หมาใหญ่ (Canis Major)', description: 'เป็นกลุ่มดาวที่มีดาวฤกษ์ที่สว่างที่สุดในท้องฟ้ายามค่ำคืน' },
+            { id: 'QQ-itAXw4h8', name: 'แอนโดรเมดา (Andromeda)', description: 'เป็นที่ตั้งของกาแล็กซีเพื่อนบ้านที่ใหญ่ที่สุด' },
+            { id: '7O3-oJ1TI0s', name: 'ปู (Cancer)', description: 'เป็นกลุ่มดาวจักรราศีที่มืดที่สุดกลุ่มหนึ่ง' },
+            { id: 'wnTREx8-v4w', name: 'สารถี (Auriga)', description: 'มีรูปทรงเป็นห้าเหลี่ยม และมีดาวคาเพลลาที่สว่าง' },
+            { id: 'NVbRCojnzmo', name: 'แพะทะเล (Capricornus)', description: 'หนึ่งในจักราศีที่มีรูปร่างกึ่งแพะกึ่งปลา' },
+            { id: 'OwueIelIGEI', name: 'โลมา (Delphinus)', description: 'กลุ่มดาวขนาดเล็กที่มีรูปร่างเหมือนโลมากำลังกระโดด' },
+            { id: 'RM2cdvv8WLg', name: 'หงส์ (Cygnus)', description: 'มีรูปร่างคล้ายกางเขน (Northern Cross) บินอยู่บนทางช้างเผือก' },
+            { id: 'U4OGIUSbp0I', name: 'เฮอร์คิวลิส (Hercules)', description: 'ตัวแทนวีรบุรุษผู้แข็งแกร่ง' },
+            { id: 'hv-eYh2Zwgs', name: 'มังกร (Draco) [2]', description: 'กลุ่มดาวที่มีลำตัวยาวคดเคี้ยวอยู่รอบขั้วโลกเหนือ' },
+            { id: 'efsBAIQS5F0', name: 'กลุ่มดาวไฮดร้า (Hydra)', description: 'เป็นงูที่มีลำตัวยาวเฟื้อย พาดผ่านท้องฟ้าเกือบ 1 ใน 4 ของวงกลมฟ้า' }
         ];
 
-        // สร้างแกลเลอรี
-        function createGallery() {
+        // --- APP LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initStars();
+            animateStars();
+            
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.classList.add('hidden'), 1500);
+            }, 1000);
+            
+            renderGallery(constellations);
+            initSearch();
+            initModalEvents();
+        });
+
+        function renderGallery(items) {
             const gallery = document.getElementById('gallery');
             gallery.innerHTML = '';
 
-            constellations.forEach((constellation, index) => {
+            items.forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'video-card';
-                card.setAttribute('data-name', constellation.name.toLowerCase());
+                card.className = 'card';
+                card.dataset.name = item.name.toLowerCase();
                 
-                const thumbnailUrl = `https://img.youtube.com/vi/${constellation.id}/maxresdefault.jpg`;
-                
+                // ใช้ลิงก์ i.ytimg.com (เซิร์ฟเวอร์ภาพหลักของ YouTube) และดึงขนาด hqdefault โดยตรง
+                const imgSrc = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
+
                 card.innerHTML = `
-                    <div class="thumbnail-wrapper">
-                        <img src="${thumbnailUrl}" alt="${constellation.name}" class="thumbnail">
-                        <div class="play-overlay">
-                            <div class="play-button"></div>
+                    <div class="thumb-box">
+                        <img src="${imgSrc}" alt="${item.name}" class="thumb-img" loading="lazy">
+                        <div class="play-indicator">
+                            <div class="play-circle">
+                                <i class="fas fa-play" style="color: #fff;"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-content">
-                        <h3 class="card-title">${constellation.name}</h3>
-                        <p class="card-description">${constellation.description}</p>
+                    <div class="card-info">
+                        <h3 class="card-title">${item.name}</h3>
+                        <p class="card-desc">${item.description}</p>
                     </div>
                 `;
-                
-                card.onclick = () => openModal(constellation);
+
+                card.addEventListener('click', () => openModal(item));
                 gallery.appendChild(card);
             });
         }
 
-        // เปิด Modal
-        function openModal(constellation) {
+        function initSearch() {
+            const input = document.getElementById('searchInput');
+            input.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase().trim();
+                const cards = document.querySelectorAll('.card');
+
+                cards.forEach(card => {
+                    const name = card.dataset.name;
+                    if (name.includes(term)) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        // --- MODAL ---
+        function openModal(item) {
             const modal = document.getElementById('videoModal');
-            const videoFrame = document.getElementById('videoFrame');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalDescription = document.getElementById('modalDescription');
-
-            videoFrame.src = `https://www.youtube.com/embed/${constellation.id}?autoplay=1`;
-            modalTitle.textContent = constellation.name;
-            modalDescription.textContent = constellation.description;
-
+            document.getElementById('videoFrame').src = `https://www.youtube.com/embed/${item.id}?autoplay=1&rel=0`;
+            document.getElementById('modalTitle').textContent = item.name;
+            document.getElementById('modalDescription').textContent = item.description;
+            
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
 
-        // ปิด Modal
         function closeModal() {
             const modal = document.getElementById('videoModal');
-            const videoFrame = document.getElementById('videoFrame');
-
             modal.classList.remove('active');
-            videoFrame.src = '';
-            document.body.style.overflow = 'auto';
+            setTimeout(() => {
+                document.getElementById('videoFrame').src = '';
+            }, 300);
+            document.body.style.overflow = '';
         }
 
-        document.getElementById('videoModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
-        });
-
-        // ระบบค้นหา
-        const searchInput = document.getElementById('searchInput');
-        const noResults = document.getElementById('noResults');
-
-        searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase().trim();
-            const cards = document.querySelectorAll('.video-card');
-            let hasResults = false;
-
-            cards.forEach(card => {
-                const name = card.getAttribute('data-name');
-                if (name.includes(searchTerm)) {
-                    card.classList.remove('hidden');
-                    hasResults = true;
-                } else {
-                    card.classList.add('hidden');
-                }
+        function initModalEvents() {
+            const modal = document.getElementById('videoModal');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
             });
-
-            if (!hasResults && searchTerm !== '') {
-                noResults.classList.add('active');
-            } else {
-                noResults.classList.remove('active');
-            }
-        });
-
-        createGallery();
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal();
+            });
+        }
     </script>
 </body>
 </html>
